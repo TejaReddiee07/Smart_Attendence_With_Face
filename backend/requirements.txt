@@ -1,0 +1,21 @@
+# Core Flask Backend
+Flask==2.3.3
+Flask-CORS==4.0.0
+Werkzeug==2.3.7
+
+# Face Recognition (CRITICAL)
+cmake==3.27.7
+dlib==19.24.2
+face_recognition==1.3.0
+imutils==0.5.4
+
+# Computer Vision
+opencv-python==4.8.1.78
+opencv-python-headless==4.8.1.78
+
+# Data Processing
+numpy==1.24.3
+Pillow==10.0.1
+
+# Utilities
+sqlite3  # Built-in Python
