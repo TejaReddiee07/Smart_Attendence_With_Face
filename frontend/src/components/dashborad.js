@@ -1,52 +1,118 @@
-// src/components/Dashboard.js
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/DashboardApp.js
+import React, { useState, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import StatsCard from "./components/StatsCard";
+import ManageStudents from "./components/ManageStudents";
+import AttendanceRecords from "./components/AttendanceRecords";
+import MarkAttendance from "./components/MarkAttendance";
+import AdminPanel from "./components/AdminPanel";
+import "./App.css";
+import { API_BASE } from "./config";
+import { getToken } from "./auth";
 
-const Dashboard = () => {
-  const navigate = useNavigate();
+function DashboardApp() {
+  const [activeSection, setActiveSection] = useState("manageStudents");
+  const [stats, setStats] = useState({ total: 0, today_present: 0 });
+  const [currentBranch, setCurrentBranch] = useState("CSE");
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const menuItems = [
-    { id: 'manage', title: '👨‍🎓 Manage Students', icon: 'fas fa-users', path: '/manage-students/AIML' },
-    { id: 'attendance', title: '🎥 Mark Attendance', icon: 'fas fa-camera', path: '/mark-attendance' },
-    { id: 'search', title: '🔍 Search Student', icon: 'fas fa-search', path: '/search-student' },
-    { id: 'records', title: '📋 Attendance Records', icon: 'fas fa-calendar-check', path: '/attendance-records' }
-  ];
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/stats`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      const data = await res.json();
+      setStats(data);
+    } catch (error) {
+      console.log("Stats fetch failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleEnrollClick = (student) => {
+    setSelectedStudent(student);
+  };
+
+  const getHeaderTitle = () => {
+    if (activeSection === "manageStudents") return "👥 Manage Students";
+    if (activeSection === "attendanceRecords") return "📋 Attendance Records";
+    if (activeSection === "markAttendance") return "🎥 Mark Attendance";
+    if (activeSection === "admin") return "👑 Admin Panel";
+    return "";
+  };
 
   return (
-    <div className="dashboard-container">
-      <div className="hero-section">
-        <div className="hero-overlay">
-          <h1 className="hero-title">Automated Facial Attendance Recorder</h1>
-          <p className="hero-subtitle">AI-Powered Face Recognition System</p>
+    <div className="app">
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h1>📊 Smart Attendance</h1>
         </div>
+        <StatsCard
+          title="Total Students"
+          value={stats.total}
+          icon="👥"
+          color="#4facfe"
+        />
+        <StatsCard
+          title="Today's Present"
+          value={stats.today_present}
+          icon="✅"
+          color="#00f2fe"
+        />
+        <Sidebar
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          currentBranch={currentBranch}
+          setCurrentBranch={setCurrentBranch}
+        />
       </div>
 
-      <div className="action-buttons-section">
-        <div className="buttons-grid">
-          {menuItems.map((item) => (
-            <div key={item.id} className="action-card" onClick={() => navigate(item.path)}>
-              <div className="card-icon"><i className={item.icon}></i></div>
-              <div className="card-content">
-                <h3>{item.title}</h3>
-              </div>
-              <div className="card-arrow"><i className="fas fa-arrow-right"></i></div>
-            </div>
-          ))}
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="header">
+          <h2>{getHeaderTitle()}</h2>
+          <button
+            className="admin-btn"
+            onClick={() => setActiveSection("admin")}
+          >
+            <i className="fas fa-user-shield" /> Admin
+          </button>
         </div>
+
+        {activeSection === "manageStudents" && (
+          <ManageStudents
+            branch={currentBranch}
+            setBranch={setCurrentBranch}
+            onStatsUpdate={fetchStats}
+            onEnroll={handleEnrollClick}
+            selectedStudent={selectedStudent}
+          />
+        )}
+
+        {activeSection === "attendanceRecords" && (
+          <AttendanceRecords
+            branch={currentBranch}
+            setBranch={setCurrentBranch}
+          />
+        )}
+
+        {activeSection === "markAttendance" && (
+          <MarkAttendance onStatsUpdate={fetchStats} />
+        )}
+
+        {activeSection === "admin" && <AdminPanel />}
       </div>
     </div>
   );
-};
+}
 
-export default Dashboard;
-// In your main Dashboard/Main component
-import AttendanceRecords from './AttendanceRecords';
-
-// Inside your JSX:
-<div className="dashboard-grid">
-  {/* Stats */}
-  {/* ManageStudents */}
-  
-  {/* ✅ ADD THIS */}
-  <AttendanceRecords branch={branch} />
-</div>
+export default DashboardApp;

@@ -8,22 +8,42 @@ const AttendanceRecords = ({ branch, setBranch }) => {
   const [loading, setLoading] = useState(true);
   const [activeBranch, setActiveBranch] = useState(branch);
 
+  const [branchCounts, setBranchCounts] = useState({
+    CSE: 0,
+    AIML: 0,
+    AIDS: 0,
+    ECE: 0,
+    MECH: 0,
+  });
+
   const branches = ['CSE', 'AIML', 'AIDS', 'ECE', 'MECH'];
 
   const loadTodayAttendance = async (selectedBranch) => {
     try {
       setLoading(true);
       console.log('📋 Loading attendance for:', selectedBranch);
-      
+
       const res = await fetch(`${API_BASE}/api/today_attendance/${selectedBranch}`);
       const data = await res.json();
       console.log('📋 Records loaded:', data);
-      
-      setRecords(data || []);
+
+      const safeData = Array.isArray(data) ? data : [];
+
+      setRecords(safeData);
       setActiveBranch(selectedBranch);
+
+      // ✅ update per-branch counts based on latest data for this branch
+      setBranchCounts((prev) => ({
+        ...prev,
+        [selectedBranch]: safeData.length,
+      }));
     } catch (error) {
       console.error('Load attendance failed:', error);
       setRecords([]);
+      setBranchCounts((prev) => ({
+        ...prev,
+        [selectedBranch]: 0,
+      }));
     } finally {
       setLoading(false);
     }
@@ -62,7 +82,10 @@ const AttendanceRecords = ({ branch, setBranch }) => {
             }}
           >
             {b}
-            <span className="branch-badge">{records.filter(r => r.branch === b).length}</span>
+            <span className="branch-badge">
+              {/* use global counts, not filtered current records */}
+              {branchCounts[b] || 0}
+            </span>
           </button>
         ))}
       </div>
@@ -71,6 +94,7 @@ const AttendanceRecords = ({ branch, setBranch }) => {
       <div className="records-header">
         <h3>
           <i className="fas fa-calendar-day"></i>
+          {" "}
           Today's Attendance - {activeBranch}
         </h3>
         <div className="header-actions">
@@ -103,7 +127,10 @@ const AttendanceRecords = ({ branch, setBranch }) => {
               <div className="record-info">
                 <h4>{record.name}</h4>
                 <p><i className="fas fa-id-card"></i> {record.admission_no}</p>
-                <p><i className="fas fa-clock"></i> {new Date(record.timestamp).toLocaleTimeString()}</p>
+                <p>
+                  <i className="fas fa-clock"></i>{" "}
+                  {new Date(record.timestamp).toLocaleTimeString()}
+                </p>
               </div>
               <div className="record-status">
                 <span className="status-present">
@@ -112,8 +139,8 @@ const AttendanceRecords = ({ branch, setBranch }) => {
                 <div className="confidence-container">
                   <span className="confidence">{record.confidence}%</span>
                   <div className="confidence-bar">
-                    <div 
-                      className="confidence-fill" 
+                    <div
+                      className="confidence-fill"
                       style={{ width: `${parseFloat(record.confidence)}%` }}
                     ></div>
                   </div>
