@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 python app.py
 
-for frontend run below commands
+open new terminal then run frontend
 
 cd frontend
 
