@@ -31,7 +31,7 @@ function DashboardApp() {
       const data = await res.json();
       setStats(data);
     } catch (error) {
-      console.log("Stats fetch failed:", error);
+      console.error("Stats fetch failed:", error);
     }
   };
 
@@ -46,11 +46,18 @@ function DashboardApp() {
   };
 
   const getHeaderTitle = () => {
-    if (activeSection === "manageStudents") return "👥 Manage Students";
-    if (activeSection === "attendanceRecords") return "📋 Attendance Records";
-    if (activeSection === "markAttendance") return "🎥 Mark Attendance";
-    if (activeSection === "admin") return "👑 Admin Panel";
-    return "";
+    switch (activeSection) {
+      case "manageStudents":
+        return "👥 Manage Students";
+      case "attendanceRecords":
+        return "📋 Attendance Records";
+      case "markAttendance":
+        return "🎥 Mark Attendance";
+      case "admin":
+        return "👑 Admin Panel";
+      default:
+        return "";
+    }
   };
 
   return (
@@ -60,6 +67,7 @@ function DashboardApp() {
         <div className="sidebar-header">
           <h1>📊 Smart Attendance</h1>
         </div>
+
         <StatsCard
           title="Total Students"
           value={stats.total}
@@ -72,6 +80,7 @@ function DashboardApp() {
           icon="✅"
           color="#00f2fe"
         />
+
         <Sidebar
           activeSection={activeSection}
           setActiveSection={setActiveSection}
@@ -92,7 +101,6 @@ function DashboardApp() {
           </button>
         </div>
 
-        {/* Sections */}
         {activeSection === "manageStudents" && (
           <ManageStudents
             branch={currentBranch}
@@ -124,29 +132,29 @@ function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
   const [screen, setScreen] = useState(isLoggedIn() ? "dashboard" : "login");
 
-const handleLoginSuccess = (token) => {
-  setToken(token);          // token must be a string
-  setAuthed(true);
-  setScreen("dashboard");
-};
+  const handleLoginSuccess = (token) => {
+    setToken(token);
+    setAuthed(true);
+    setScreen("dashboard");
+  };
 
-const handleSignupSuccess = (token) => {
-  setToken(token);
-  setAuthed(true);
-  setScreen("dashboard");
-};
+  const handleSignupSuccess = (token) => {
+    setToken(token);
+    setAuthed(true);
+    setScreen("dashboard");
+  };
 
   const handleLogout = async () => {
     try {
-      const token = getToken();
       await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
         },
       });
     } catch (_) {}
+
     clearToken();
     setAuthed(false);
     setScreen("login");
@@ -169,7 +177,6 @@ const handleSignupSuccess = (token) => {
     );
   }
 
-  // Authed view: dashboard + existing functionality
   return (
     <>
       <button
